@@ -7,8 +7,10 @@ import java.util.TreeMap;
 
 import edu.handong.analysis.datamodel.Course;
 import edu.handong.analysis.datamodel.Student;
-import edu.handong.analysise.utils.NotEnoughArgumentException;
-import edu.handong.analysise.utils.Utils;
+import edu.handong.analysis.utils.NotEnoughArgumentException;
+import edu.handong.analysis.utils.Utils;
+
+import java.io.File;
 
 public class HGUCoursePatternAnalyzer {
 
@@ -34,16 +36,16 @@ public class HGUCoursePatternAnalyzer {
 		String resultPath = args[1]; // the file path where the results are saved.
 		ArrayList<String> lines = Utils.getLines(dataPath, true);
 		
-		students = loadStudentCourseRecords(lines);
+		students = loadStudentCourseRecords(lines);  // 학생들의 기록을 해쉬맵에 저장 KEY는 ID, VALUE는 학생의 기록-> COURSE에서 받은 것
 		
 		// To sort HashMap entries by key values so that we can save the results by student ids in ascending order.
-		Map<String, Student> sortedStudents = new TreeMap<String,Student>(students); 
+		Map<String, Student> sortedStudents = new TreeMap<String,Student>(students); // 각 학생을 학기별로 정렬
 		
 		// Generate result lines to be saved.
 		ArrayList<String> linesToBeSaved = countNumberOfCoursesTakenInEachSemester(sortedStudents);
 		
 		// Write a file (named like the value of resultPath) with linesTobeSaved.
-		Utils.writeAFile(linesToBeSaved, resultPath);
+		Utils.writeAFile(linesToBeSaved, resultPath); // 저장되야하는 정보와 저장 경로를 받아서 저장시키기
 	}
 	
 	/**
@@ -54,7 +56,31 @@ public class HGUCoursePatternAnalyzer {
 	 */
 	private HashMap<String,Student> loadStudentCourseRecords(ArrayList<String> lines) {
 		
-		// TODO: Implement this method
+		String key = null;
+		Student read = new Student(key);
+		
+		Map<String, Student> hashMap = new HashMap<String, Student>();
+		
+		int i= 0;
+		
+		while(lines.get(i) != null) {
+			
+			String line = lines.get(i);
+			
+			Course course = new Course(line);
+			key = course.getStudentId();
+			
+			hashMap.put(key,read);
+		
+
+			
+		}
+		
+		
+		
+		
+		
+		
 		
 		return null; // do not forget to return a proper variable.
 	}
