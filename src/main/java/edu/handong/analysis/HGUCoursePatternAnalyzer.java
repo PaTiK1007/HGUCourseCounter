@@ -1,9 +1,18 @@
 package edu.handong.analysis;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.csv.*;
 
 import edu.handong.analysis.datamodel.Course;
 import edu.handong.analysis.datamodel.Student;
@@ -14,26 +23,41 @@ import edu.handong.analysis.utils.Utils;
 public class HGUCoursePatternAnalyzer {
 
 	private HashMap<String,Student> students = new HashMap<String, Student>();
+	private ArrayList<Course> yearTaken = new ArrayList<Course>();
+	
+	private String input;
+	private String output;
+	private String code;
+	private String stYear;
+	private String enYear;
+	private String optA;
+	private boolean help;
+	private boolean c2 = false;
+	private int number =0;
+	
+	
+	
 	
 	/**
 	 * This method runs our analysis logic to save the number courses taken by each student per semester in a result file.
 	 * Run method must not be changed!!
 	 * @param args
 	 */
-	public void run(String[] args) {
+	public void run(String[] args) throws IOException{
+		Options options = createOptions();
+		ArrayList<String> linesToBeSaved = new ArrayList<String>();
 		
-		try {
-			// when there are not enough arguments from CLI, it throws the NotEnoughArgmentException which must be defined by you.
-			if(args.length<2)
-				throw new NotEnoughArgumentException();
-		} catch (NotEnoughArgumentException e) {
-			System.out.println(e.getMessage());
-			System.exit(0);
+		
+		if(parseOptions(options, args)){
+			if (help){
+				printHelp(options);
+				return;
+			}
 		}
 		
-		String dataPath = args[0]; // csv file to be analyzed
-		String resultPath = args[1]; // the file path where the results are saved.
-		ArrayList<String> lines = Utils.getLines(dataPath, true);
+		if(input != null && output !=null) {
+			 
+		CSVParser lines = Utils.getLines(input, true);
 		
 		students = loadStudentCourseRecords(lines);  // 학생들의 기록을 해쉬맵에 저장 KEY는 ID, VALUE는 학생의 기록-> COURSE에서 받은 것
 		
@@ -41,10 +65,20 @@ public class HGUCoursePatternAnalyzer {
 		Map<String, Student> sortedStudents = new TreeMap<String,Student>(students); // 각 학생을 학기별로 정렬
 		
 		// Generate result lines to be saved.
-		ArrayList<String> linesToBeSaved = countNumberOfCoursesTakenInEachSemester(sortedStudents); // 저장될 정보를 라인 단위로 받기
+		if(c2 = false) {
+			
+			linesToBeSaved = option1(sortedStudents); // 저장될 정보를 라인 단위로 받기
+		}else {
+			
+			linesToBeSaved = option2(sortedStudents);
+			
+		}
 		
 		// Write a file (named like the value of resultPath) with linesTobeSaved.
-		Utils.writeAFile(linesToBeSaved, resultPath); // 저장되야하는 정보와 저장 경로를 받아서 저장시키기
+		Utils.writeAFile(linesToBeSaved, output); // 저장되야하는 정보와 저장 경로를 받아서 저장시키기
+		 
+		 
+		}
 	}
 	
 	/**
@@ -53,16 +87,16 @@ public class HGUCoursePatternAnalyzer {
 	 * @param lines
 	 * @return
 	 */
-	private HashMap<String,Student> loadStudentCourseRecords(ArrayList<String> lines) {
+	private HashMap<String,Student> loadStudentCourseRecords(CSVParser lines) {
 		
 		
 		HashMap<String, Student> hashMap = new HashMap<String, Student>();
 		
 		
-		for(String line : lines) {
+		for(CSVRecord line : lines) {
 			
 			Course course = new Course(line);
-			Student read = new Student(course.getStudentId());
+			Student read = new Student(course.getStudentId(),Integer.parseInt(stYear),Integer.parseInt(enYear));
 			
 			
 			if(hashMap.containsKey(read.getStudentId())) {
@@ -95,7 +129,40 @@ public class HGUCoursePatternAnalyzer {
 	 * @param sortedStudents
 	 * @return
 	 */
-	private ArrayList<String> countNumberOfCoursesTakenInEachSemester(Map<String, Student> sortedStudents) {
+	private ArrayList<String> option1(Map<String, Student> sortedStudents) {
+		String line = null;
+		ArrayList<String> printLine = new ArrayList<String>();
+		
+		for(String key:sortedStudents.keySet()) {
+			sortedStudents.get(key).getSemestersByYearAndSemester();
+		}
+		
+		printLine.add("StudentID, TotalNumberOfSemestersRegistered, Semester, NumCoursesTakenInTheSemester");
+		
+		
+		
+		for(String key:sortedStudents.keySet()) {// ID 순서대로 불러 오기
+			
+			for(Student year : sortedStudents.values()){
+					for(String command: sortedStudents.get(key).getSemesterByYearAndSemesterMap().keySet()) {
+						String id = sortedStudents.get(key).getStudentId();
+						int registeredSemester = sortedStudents.get(key).getTotal();
+						int semester = sortedStudents.get(key).getSemestersByYearAndSemester().get(command);
+						int numCourses = sortedStudents.get(key).getNumCourseInNthSementer(semester);
+				
+						line = id + "," + registeredSemester + "," + semester + "," + numCourses;
+				
+						printLine.add(line);
+				}
+			
+			}
+		}
+		
+		return printLine;
+	}
+	
+	
+	private ArrayList<String> option2(Map<String, Student> sortedStudents) {
 		String line = null;
 		ArrayList<String> printLine = new ArrayList<String>();
 		
@@ -108,19 +175,114 @@ public class HGUCoursePatternAnalyzer {
 		
 		
 		for(String key:sortedStudents.keySet()) {
-			for(String command: sortedStudents.get(key).getSemesterByYearAndSemesterMap().keySet()) {
-				String id = sortedStudents.get(key).getStudentId();
-				int registeredSemester = sortedStudents.get(key).getTotal();
-				int semester = sortedStudents.get(key).getSemestersByYearAndSemester().get(command);
-				int numCourses = sortedStudents.get(key).getNumCourseInNthSementer(semester);
+				for(String command: sortedStudents.get(key).getSemesterByYearAndSemesterMap().keySet()) {
+					String id = sortedStudents.get(key).getStudentId();
+					int registeredSemester = sortedStudents.get(key).getTotal();
+					int semester = sortedStudents.get(key).getSemestersByYearAndSemester().get(command);
+					int numCourses = sortedStudents.get(key).getNumCourseInNthSementer(semester);
 				
-				line = id + "," + registeredSemester + "," + semester + "," + numCourses;
+					line = id + "," + registeredSemester + "," + semester + "," + numCourses;
 				
-				printLine.add(line);
+					printLine.add(line);
+				}
 			}
-		}
 		
-		
+	
 		return printLine;
 	}
+	
+	private boolean parseOptions(Options options, String[] args) {
+		CommandLineParser parser = new DefaultParser();
+
+		try {
+
+			CommandLine cmd = parser.parse(options, args);
+			
+			input = cmd.getOptionValue("i");
+			output = cmd.getOptionValue("o");
+			optA = cmd.getOptionValue("a");
+			code = cmd.getOptionValue("c");
+			stYear = cmd.getOptionValue("s");
+			enYear = cmd.getOptionValue("e");
+			help = cmd.hasOption("h");
+			
+			if(optA.equals("2")) {
+				c2 = true;
+			}
+			
+
+		} catch (Exception e) {
+			printHelp(options);
+			return false;
+		}
+
+		return true;
+	}
+	
+	private Options createOptions() {
+		Options options = new Options();
+
+		// add options by using OptionBuilder
+		options.addOption(Option.builder("i").longOpt("input")
+				.desc("Set an input file path")
+				.hasArg()
+				.argName("Input path")
+				.required() 
+				.build());
+		
+		options.addOption(Option.builder("o").longOpt("output")
+				.desc("Set an output file path")
+				.hasArg()
+				.argName("Output path")
+				.required() 
+				.build());
+		
+	
+		// add options by using OptionBuilder
+		options.addOption(Option.builder("a").longOpt("analysis")
+				.desc("1: Count courses per semester, 2: Count per course name and year")
+				.hasArg()    
+				.argName("Analysis option")
+				.required() 
+				.build());
+		
+		
+		options.addOption(Option.builder("c").longOpt("coursecode")
+				.desc("Course code for '-a 2' option")
+				.hasArg()    
+				.argName("course code")
+				.required(c2)
+				.build());
+		
+		options.addOption(Option.builder("s").longOpt("startyear")
+				.desc("Set the start year for analysis e.g., -s 2002")
+				.hasArg()    
+				.argName("Start year for analysis")
+				.required()
+				.build());
+		
+		options.addOption(Option.builder("e").longOpt("endyear")
+				.desc("Set the end year for analysis e.g., -e 2005")
+				.hasArg()    
+				.argName("End year for analysis")
+				.required()
+				.build());
+		
+		
+		// add options by using OptionBuilder
+		options.addOption(Option.builder("h").longOpt("help")
+		        .desc("Show a Help page")
+		        .build());
+
+		return options;
+	}
+	
+	private void printHelp(Options options) {
+		// automatically generate the help statement
+		HelpFormatter formatter = new HelpFormatter();
+		String header = "HGU Course Analyzer";
+		String footer ="";
+		formatter.printHelp("HGUCourseCounter", header, options, footer, true);
+	}
+
 }

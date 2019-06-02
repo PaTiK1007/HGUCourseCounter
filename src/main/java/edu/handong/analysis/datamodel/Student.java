@@ -11,17 +11,25 @@ public class Student {
 	private ArrayList<Course> coursesTaken = new ArrayList<Course>(); // List of courses student has taken
 	private HashMap<String,Integer> semestersByYearAndSemester = new HashMap<String,Integer>();
 	private int total;
+	private int sYear;
+	private int eYear;
 	
-	public Student(String studentId) {
+	public Student(String studentId, int startYear, int endYear) {
 		this.studentId= studentId;
+		this.sYear = startYear;
+		this.eYear = endYear;
 		
 	}
 	
 	
 	public void addCourse(Course newRecord) {
 		
+		int year = newRecord.getYearTaken();
+		
+		
 		coursesTaken.add(newRecord);
-	
+		
+		
 	}
 	
 	
@@ -45,6 +53,9 @@ public class Student {
 		return semestersByYearAndSemester;
 		
 	}
+	
+
+
 
 	
 	public int getNumCourseInNthSementer(int semester) {
@@ -64,7 +75,7 @@ public class Student {
 				}
 			}
 		
-			}
+		}
 		
 		return courseNum;
 	

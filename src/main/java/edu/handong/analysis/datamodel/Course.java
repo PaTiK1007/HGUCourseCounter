@@ -1,5 +1,7 @@
 package edu.handong.analysis.datamodel;
 
+import org.apache.commons.csv.CSVRecord;
+
 public class Course {
 	private String studentId;
 	private String yearMonthGraduated;
@@ -12,17 +14,17 @@ public class Course {
 	private int semesterCourseTaken;
 
 	
-	public Course(String line){
+	public Course(CSVRecord line){
 		
-		studentId = line.trim().split(", ")[0];
-		yearMonthGraduated = line.trim().split(", ")[1];
-		firstMajor = line.trim().split(", ")[2];
-		secondMajor = line.trim().split(", ")[3];
-		courseCode = line.trim().split(", ")[4];
-		courseName = line.trim().split(", ")[5];
-		courseCredit = line.trim().split(", ")[6];
-		yearTaken = Integer.parseInt(line.trim().split(", ")[7]);
-		semesterCourseTaken = Integer.parseInt(line.trim().split(", ")[8]);
+		studentId = line.get("StudentID");
+		yearMonthGraduated = line.get("YearMonthGraduated");
+		firstMajor = line.get("FistMajor");
+		secondMajor = line.get("SecondMajor");
+		courseCode = line.get("CourseCode");
+		courseName = line.get("CourseName");
+		courseCredit = line.get("CourseCredit");
+		yearTaken = Integer.parseInt(line.get("YearTaken"));
+		semesterCourseTaken = Integer.parseInt(line.get("SemesterTaken"));
 	}
 
 
