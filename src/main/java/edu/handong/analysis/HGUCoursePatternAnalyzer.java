@@ -16,14 +16,12 @@ import org.apache.commons.csv.*;
 
 import edu.handong.analysis.datamodel.Course;
 import edu.handong.analysis.datamodel.Student;
-import edu.handong.analysis.utils.NotEnoughArgumentException;
 import edu.handong.analysis.utils.Utils;
 
 
 public class HGUCoursePatternAnalyzer {
 
 	private HashMap<String,Student> students = new HashMap<String, Student>();
-	private ArrayList<Course> yearTaken = new ArrayList<Course>();
 	
 	private String input;
 	private String output;
@@ -33,7 +31,6 @@ public class HGUCoursePatternAnalyzer {
 	private String optA;
 	private boolean help;
 	private boolean c2 = false;
-	private int number =0;
 	
 	
 	
@@ -54,6 +51,8 @@ public class HGUCoursePatternAnalyzer {
 				return;
 			}
 		}
+		
+		
 		
 		if(input != null && output !=null) {
 			 
@@ -113,7 +112,7 @@ public class HGUCoursePatternAnalyzer {
 		}
 		
 		
-		return hashMap; // do not forget to return a proper variable.
+		return hashMap;
 	}
 
 	/**
@@ -129,40 +128,8 @@ public class HGUCoursePatternAnalyzer {
 	 * @param sortedStudents
 	 * @return
 	 */
+	
 	private ArrayList<String> option1(Map<String, Student> sortedStudents) {
-		String line = null;
-		ArrayList<String> printLine = new ArrayList<String>();
-		
-		for(String key:sortedStudents.keySet()) {
-			sortedStudents.get(key).getSemestersByYearAndSemester();
-		}
-		
-		printLine.add("StudentID, TotalNumberOfSemestersRegistered, Semester, NumCoursesTakenInTheSemester");
-		
-		
-		
-		for(String key:sortedStudents.keySet()) {// ID 순서대로 불러 오기
-			
-			for(Student year : sortedStudents.values()){
-					for(String command: sortedStudents.get(key).getSemesterByYearAndSemesterMap().keySet()) {
-						String id = sortedStudents.get(key).getStudentId();
-						int registeredSemester = sortedStudents.get(key).getTotal();
-						int semester = sortedStudents.get(key).getSemestersByYearAndSemester().get(command);
-						int numCourses = sortedStudents.get(key).getNumCourseInNthSementer(semester);
-				
-						line = id + "," + registeredSemester + "," + semester + "," + numCourses;
-				
-						printLine.add(line);
-				}
-			
-			}
-		}
-		
-		return printLine;
-	}
-	
-	
-	private ArrayList<String> option2(Map<String, Student> sortedStudents) {
 		String line = null;
 		ArrayList<String> printLine = new ArrayList<String>();
 		
@@ -190,6 +157,124 @@ public class HGUCoursePatternAnalyzer {
 	
 		return printLine;
 	}
+	
+	
+	
+	private ArrayList<String> option2(Map<String, Student> sortedStudents) {
+		ArrayList<String> printLine = new ArrayList<String>();
+		
+		String result = null;
+		
+		for(String key:sortedStudents.keySet()) {
+			sortedStudents.get(key).getSemestersByYearAndSemester();
+		}
+		printLine.add("Year,Semester,CourseCode, CourseName,TotalStudents,StudentsTaken,Rate");
+		
+		Map<String, Integer> sortedTotalNumStudents = new TreeMap<String, Integer>(getTotalNumStudent(sortedStudents));
+	
+		Map<String, Integer> sortedStudentsTaken = new TreeMap<String, Integer>(getStudentsTaken(sortedStudents));
+
+		
+		String courseName = getCourse(sortedStudents);
+		
+		for(String oneKey:sortedStudentsTaken.keySet()) {
+			if(sortedTotalNumStudents.containsKey(oneKey)) {
+				String[] temp = oneKey.split("-");
+				int year = Integer.parseInt(temp[0]);
+				int semester = Integer.parseInt(temp[1]);
+				int totalStudents = getTotalNumStudent(sortedStudents).get(oneKey);
+				int studentsTaken = getStudentsTaken(sortedStudents).get(oneKey);
+				float rate = (float)studentsTaken / totalStudents;
+				
+				String percent = String.format("%.1f", rate*100);
+				
+				result = year + "," + semester + "," + code + "," + courseName + "," + totalStudents + "," + studentsTaken + "," + percent + "%";
+				
+				printLine.add(result);
+			}
+		}
+		
+		return printLine;
+	}
+	
+	
+	public String getCourse(Map<String,Student> sortedStudents){
+		ArrayList<String> courseName = new ArrayList<String>();
+		
+		for(String key:sortedStudents.keySet()) {
+			for(Course data:sortedStudents.get(key).getCoursesTaken()) {
+				String currentCourseCode = data.getCourseCode();
+				
+				if(currentCourseCode.equals(code)) {
+					
+					courseName.add(data.getCourseName());
+					
+				}
+			}
+		}
+		String coursePrint = courseName.get(0);
+		for(String name:courseName) {
+			if(name.equals(coursePrint) == false){
+				System.out.println("Wrong course name");
+				System.exit(0);
+			}
+		}
+		return coursePrint;
+	}
+		
+	public HashMap<String,Integer> getTotalNumStudent(Map <String,Student> sortedStudents){
+			HashMap<String, Integer> totalStudentNum = new HashMap<String, Integer>();
+			
+			for(String key:sortedStudents.keySet()) {
+				for(String command:sortedStudents.get(key).getSemestersByYearAndSemester().keySet()) {
+					if(totalStudentNum.containsKey(command)) {
+						
+						int x = totalStudentNum.get(command)+1;
+						
+						totalStudentNum.put(command, x);
+						
+					}else {
+						
+						totalStudentNum.put(command, 1);
+						
+					}
+				}
+			}
+			return totalStudentNum;
+		}
+	
+	
+	
+	
+	public HashMap<String, Integer> getStudentsTaken(Map<String, Student> sortedStudents) {
+		HashMap<String, Integer> studentsNum = new HashMap<String, Integer>();
+		
+		for(String key:sortedStudents.keySet()) {
+			for(Course data:sortedStudents.get(key).getCoursesTaken()) {
+				String yearSemester = data.getYearTaken() + "-" + data.getSemesterCourseTaken();
+				String currentCourseCode = data.getCourseCode();
+				
+				if(currentCourseCode.equals(code)) {
+					
+					if(studentsNum.containsKey(yearSemester)) {
+						
+						int x = studentsNum.get(yearSemester)+1;
+						studentsNum.put(yearSemester, x);
+						
+					}else {
+						
+						studentsNum.put(yearSemester, 1);
+						
+					}
+				}
+			}
+		}
+		
+		return studentsNum;
+	}
+		
+		
+	
 	
 	private boolean parseOptions(Options options, String[] args) {
 		CommandLineParser parser = new DefaultParser();
@@ -222,7 +307,6 @@ public class HGUCoursePatternAnalyzer {
 	private Options createOptions() {
 		Options options = new Options();
 
-		// add options by using OptionBuilder
 		options.addOption(Option.builder("i").longOpt("input")
 				.desc("Set an input file path")
 				.hasArg()
@@ -238,7 +322,6 @@ public class HGUCoursePatternAnalyzer {
 				.build());
 		
 	
-		// add options by using OptionBuilder
 		options.addOption(Option.builder("a").longOpt("analysis")
 				.desc("1: Count courses per semester, 2: Count per course name and year")
 				.hasArg()    
@@ -269,7 +352,6 @@ public class HGUCoursePatternAnalyzer {
 				.build());
 		
 		
-		// add options by using OptionBuilder
 		options.addOption(Option.builder("h").longOpt("help")
 		        .desc("Show a Help page")
 		        .build());

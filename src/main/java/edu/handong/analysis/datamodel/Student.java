@@ -26,9 +26,9 @@ public class Student {
 		
 		int year = newRecord.getYearTaken();
 		
-		
-		coursesTaken.add(newRecord);
-		
+		if(year>=sYear && year<=eYear) {
+			coursesTaken.add(newRecord);
+		}
 		
 	}
 	
@@ -91,6 +91,10 @@ public class Student {
 
 	public String getStudentId() {
 		return studentId;
+	}
+	
+	public ArrayList<Course> getCoursesTaken(){
+		return coursesTaken;
 	}
 
 
