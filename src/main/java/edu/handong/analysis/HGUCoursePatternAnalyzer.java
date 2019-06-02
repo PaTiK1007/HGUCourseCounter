@@ -52,6 +52,10 @@ public class HGUCoursePatternAnalyzer {
 			}
 		}
 		
+		if(optA.equals("2")) {
+			c2 = true;
+		}
+		
 		
 		
 		if(input != null && output !=null) {
@@ -64,7 +68,7 @@ public class HGUCoursePatternAnalyzer {
 		Map<String, Student> sortedStudents = new TreeMap<String,Student>(students); // 각 학생을 학기별로 정렬
 		
 		// Generate result lines to be saved.
-		if(c2 = false) {
+		if(c2 == false) {
 			
 			linesToBeSaved = option1(sortedStudents); // 저장될 정보를 라인 단위로 받기
 		}else {
@@ -291,9 +295,7 @@ public class HGUCoursePatternAnalyzer {
 			enYear = cmd.getOptionValue("e");
 			help = cmd.hasOption("h");
 			
-			if(optA.equals("2")) {
-				c2 = true;
-			}
+			
 			
 
 		} catch (Exception e) {
